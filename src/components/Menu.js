@@ -1,23 +1,40 @@
 import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 const Menu = () => {
-  const [selectedMenu, setSelectedMenu] = useState(0);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] =
     useState(false);
 
+  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   let user = {};
 
+  // First check URL
   try {
     const userData = searchParams.get("user");
 
     if (userData) {
       user = JSON.parse(decodeURIComponent(userData));
+
+      // Save user on DASHBOARD domain
+      localStorage.setItem("user", JSON.stringify(user));
     }
   } catch (error) {
-    console.log("User data error:", error);
+    console.log("URL user data error:", error);
+  }
+
+  // If URL doesn't have user, check localStorage
+  if (!user.name && !user.username && !user.email) {
+    try {
+      const storedUser = localStorage.getItem("user");
+
+      if (storedUser) {
+        user = JSON.parse(storedUser);
+      }
+    } catch (error) {
+      console.log("LocalStorage user error:", error);
+    }
   }
 
   const userName =
@@ -26,27 +43,28 @@ const Menu = () => {
     user.email ||
     "USERID";
 
-  const handleMenuClick = (index) => {
-    setSelectedMenu(index);
-  };
+  const menuItems = [
+    { name: "Dashboard", path: "/" },
+    { name: "Orders", path: "/orders" },
+    { name: "Holdings", path: "/holdings" },
+    { name: "Positions", path: "/positions" },
+    { name: "Funds", path: "/funds" },
+    { name: "Apps", path: "/apps" },
+  ];
 
   const handleProfileClick = () => {
-    setIsProfileDropdownOpen(
-      !isProfileDropdownOpen
-    );
+    setIsProfileDropdownOpen(!isProfileDropdownOpen);
   };
 
   const handleLogout = () => {
-    window.location.href =
-      "http://localhost:3000/login";
-  };
+    localStorage.removeItem("user");
 
-  const menuClass = "menu";
-  const activeMenuClass = "menu selected";
+    window.location.href =
+      "https://zerodha-landing-019w.onrender.com/login";
+  };
 
   return (
     <div className="menu-container">
-
       <img
         src="/logo.png"
         style={{ width: "50px" }}
@@ -54,117 +72,30 @@ const Menu = () => {
       />
 
       <div className="menus">
-
         <ul>
+          {menuItems.map((item) => {
+            const isSelected =
+              location.pathname === item.path;
 
-          <li>
-            <Link
-              style={{ textDecoration: "none" }}
-              to="/"
-              onClick={() => handleMenuClick(0)}
-            >
-              <p
-                className={
-                  selectedMenu === 0
-                    ? activeMenuClass
-                    : menuClass
-                }
-              >
-                Dashboard
-              </p>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              style={{ textDecoration: "none" }}
-              to="/orders"
-              onClick={() => handleMenuClick(1)}
-            >
-              <p
-                className={
-                  selectedMenu === 1
-                    ? activeMenuClass
-                    : menuClass
-                }
-              >
-                Orders
-              </p>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              style={{ textDecoration: "none" }}
-              to="/holdings"
-              onClick={() => handleMenuClick(2)}
-            >
-              <p
-                className={
-                  selectedMenu === 2
-                    ? activeMenuClass
-                    : menuClass
-                }
-              >
-                Holdings
-              </p>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              style={{ textDecoration: "none" }}
-              to="/positions"
-              onClick={() => handleMenuClick(3)}
-            >
-              <p
-                className={
-                  selectedMenu === 3
-                    ? activeMenuClass
-                    : menuClass
-                }
-              >
-                Positions
-              </p>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              style={{ textDecoration: "none" }}
-              to="/funds"
-              onClick={() => handleMenuClick(4)}
-            >
-              <p
-                className={
-                  selectedMenu === 4
-                    ? activeMenuClass
-                    : menuClass
-                }
-              >
-                Funds
-              </p>
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              style={{ textDecoration: "none" }}
-              to="/apps"
-              onClick={() => handleMenuClick(5)}
-            >
-              <p
-                className={
-                  selectedMenu === 5
-                    ? activeMenuClass
-                    : menuClass
-                }
-              >
-                Apps
-              </p>
-            </Link>
-          </li>
-
+            return (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  style={{ textDecoration: "none" }}
+                >
+                  <p
+                    className={
+                      isSelected
+                        ? "menu selected"
+                        : "menu"
+                    }
+                  >
+                    {item.name}
+                  </p>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <hr />
@@ -172,8 +103,8 @@ const Menu = () => {
         <div
           className="profile"
           onClick={handleProfileClick}
+          style={{ position: "relative" }}
         >
-
           <div className="avatar">
             {userName.charAt(0).toUpperCase()}
           </div>
@@ -210,9 +141,7 @@ const Menu = () => {
               </button>
             </div>
           )}
-
         </div>
-
       </div>
     </div>
   );
